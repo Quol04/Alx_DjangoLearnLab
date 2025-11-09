@@ -9,7 +9,7 @@ author = Author.objects.get(id=1)  # Replace with the desired author ID
 books_by_author = author.books.all()
 
 # List all books in a library.
-library = Library.objects.get(id=1)  # Replace with the desired library ID
+library = Library.objects.get(name = Library.name)  # Replace with the desired library ID
 books_in_library = library.books.all()
 
 # Retrieve the librarian for a library.
