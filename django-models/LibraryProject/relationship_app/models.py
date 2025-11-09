@@ -1,5 +1,12 @@
 from django.db import models
 
+# Step 1: Extend the Book Model with Custom Permissions
+# Add custom permissions to the Book model to specify who can add, edit, or delete the entries.
+
+# Model Changes Required:
+# Inside the Book model, define a nested Meta class.
+# Within this Meta class, specify a permissions tuple that includes permissions like can_add_book, can_change_book, and can_delete_book.
+
 
 class Author(models.Model):
     name = models.CharField(max_length=100)
@@ -10,8 +17,18 @@ class Book(models.Model):
     title = models.CharField(max_length=200)
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='books')
 
+
     def __str__(self):
         return self.title
+
+    class Meta:
+        permissions = [
+            ("can_add_book", "Can add book"),
+            ("can_change_book", "Can change book"),
+            ("can_delete_book", "Can delete book"),
+        ]
+
+
 class Library(models.Model):
     name = models.CharField(max_length=200)
     books = models.ManyToManyField(Book, related_name='libraries')
@@ -26,13 +43,6 @@ class Librarian(models.Model):
         return self.name    
 
 
-# Step 1: Extend the User Model with a UserProfile
-# Create a UserProfile model that includes a role field with predefined roles. This model should be linked to Django’s built-in User model with a one-to-one relationship.
-
-# Fields Required:
-# user: OneToOneField linked to Django’s User.
-# role: CharField with choices for ‘Admin’, ‘Librarian’, and ‘Member’.
-# Automatic Creation: Use Django signals to automatically create a UserProfile when a new user is registered.
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -60,17 +70,6 @@ def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
 
 
-# Step 2: Set Up Role-Based Views
-# Create three separate views to manage content access based on user roles:
-
-# Views to Implement:
-
-# An ‘Admin’ view that only users with the ‘Admin’ role can access, the name of the file should be admin_view
-# A ‘Librarian’ view accessible only to users identified as ‘Librarians’. The file should be named librarian_view
-# A ‘Member’ view for users with the ‘Member’ role, the name of the file should be member_view
-# Access Control:
-
-# Utilize the @user_passes_test decorator to check the user’s role before granting access to each view.
 from django.contrib.auth.decorators import user_passes_test
 def is_admin(user):
     return user.is_authenticated and user.profile.role == 'Admin'

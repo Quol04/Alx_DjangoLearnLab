@@ -2,12 +2,20 @@ from django.shortcuts import render
 from .models import Book
 from django.views.generic.detail import DetailView
 from .models import Library
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView, LogoutView
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.contrib.auth.models import Group
+from django.forms import ModelForm
+
+# Step 2: Update Views to Enforce Permissions
+# Adjust your views to check if a user has the necessary permissions before allowing them to perform create, update, or delete operations.
+
+# Views to Modify:
+# Use Django’s permission_required decorator to secure views that add, edit, or delete books.
+# For each view, apply the corresponding permission.
 
 
 def list_books(request):
@@ -97,6 +105,7 @@ def is_member(user):
     return user.groups.filter(name='Member').exists()
 
 
+
 @user_passes_test(is_admin, login_url='login')
 def admin_view(request):
     """View accessible only to admins/staff."""
@@ -113,4 +122,51 @@ def librarian_view(request):
 def member_view(request):
     """View accessible only to library members."""
     return render(request, 'relationship_app/member_view.html')
+
+
+# --- Permission-protected Book CRUD views ---
+class BookForm(ModelForm):
+    class Meta:
+        model = Book
+        fields = '__all__'
+
+
+@permission_required('relationship_app.add_book', login_url='login')
+def add_book(request):
+    """Create a new Book. Requires `relationship_app.add_book` permission."""
+    if request.method == 'POST':
+        form = BookForm(request.POST)
+        if form.is_valid():
+            book = form.save()
+            return redirect('list_books')
+    else:
+        form = BookForm()
+
+    return render(request, 'relationship_app/book_form.html', {'form': form, 'action': 'Add'})
+
+
+@permission_required('relationship_app.change_book', login_url='login')
+def edit_book(request, pk):
+    """Edit an existing Book. Requires `relationship_app.change_book` permission."""
+    book = get_object_or_404(Book, pk=pk)
+    if request.method == 'POST':
+        form = BookForm(request.POST, instance=book)
+        if form.is_valid():
+            form.save()
+            return redirect('list_books')
+    else:
+        form = BookForm(instance=book)
+
+    return render(request, 'relationship_app/book_form.html', {'form': form, 'action': 'Edit'})
+
+
+@permission_required('relationship_app.delete_book', login_url='login')
+def delete_book(request, pk):
+    """Delete a Book. Requires `relationship_app.delete_book` permission."""
+    book = get_object_or_404(Book, pk=pk)
+    if request.method == 'POST':
+        book.delete()
+        return redirect('list_books')
+
+    return render(request, 'relationship_app/book_confirm_delete.html', {'book': book})
 
