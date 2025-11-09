@@ -12,6 +12,16 @@ def books_by_author(author_id):
     return author.books.all()
 
 
+def books_by_author_name(author_name):
+    """Find an Author by name and return books written by that author using a filter query.
+
+    This function intentionally uses the form `Author.objects.get(name=author_name)` and
+    `Book.objects.filter(author=author)` to demonstrate both lookup styles.
+    """
+    author = Author.objects.get(name=author_name)
+    return Book.objects.filter(author=author)
+
+
 # List all books in a library (lookup by ID).
 def books_in_library_by_id(library_id):
     library = Library.objects.get(id=library_id)

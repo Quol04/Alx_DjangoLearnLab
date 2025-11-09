@@ -63,3 +63,8 @@ class AppLogoutView(LogoutView):
     After logout this view will display `relationship_app/logged_out.html`.
     """
     template_name = 'relationship_app/logged_out.html'
+
+# Note: Role-based views (admin_view, librarian_view, member_view) are
+# implemented in their respective files as per the project structure.
+
+    

@@ -1,0 +1,42 @@
+<!-- Step 4: Create Role-Based HTML Templates
+For each role, create an HTML template to display relevant content when users access their respective views.
+
+Templates to Create:
+
+librarian_view.html for Librarians.
+member_view.html for Members. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin View - Library Management System</title>
+    <link rel="stylesheet" href="{% static 'relationship_app/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Welcome, Admin!</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'manage_librarians' %}">Manage Librarians</a></li>
+                <li><a href="{% url 'manage_members' %}">Manage Members</a></li>
+                <li><a href="{% url 'view_reports' %}">View Reports</a></li>
+                <li><a href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section>
+            <h2>Admin Dashboard</h2>
+            <p>Here you can manage librarians, members, and view system reports.</p>
+            <!-- Additional admin-specific content can go here -->
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Library Management System. All rights reserved.</p>
+    </footer>
+</body>>
+</html>
