@@ -1,8 +1,4 @@
-# Prepare a Python script query_samples.py in the relationship_app directory. This script should contain the query for each of the following of relationship:
-# Query all books by a specific author.
 
-# List all books in a library.
-# Retrieve the librarian for a library.
 from relationship_app.models import Author, Book, Library, Librarian
 
 
@@ -51,6 +47,22 @@ def get_librarian_for_library(library_id=None, library_name=None):
     return getattr(library, 'librarian', None)
 
 
+def get_librarian_by_lookup(library_id=None, library_name=None):
+    """Retrieve a Librarian object using an explicit lookup on the Librarian model.
+
+    This demonstrates `Librarian.objects.get(library=...)` as requested.
+    """
+    if library_id is not None:
+        library = Library.objects.get(id=library_id)
+    elif library_name is not None:
+        library = Library.objects.get(name=library_name)
+    else:
+        raise ValueError('Either library_id or library_name must be provided')
+
+    # explicit lookup on the Librarian model by its related library
+    return Librarian.objects.get(library=library)
+
+
 if __name__ == '__main__':
     # Example CLI-style usage; adjust IDs/names as needed for your DB
     author_id = 1
@@ -75,6 +87,13 @@ if __name__ == '__main__':
             print(f"\nLibrarian for Library (id={library_id}): {librarian.name}")
         else:
             print(f"\nNo librarian associated with Library (id={library_id})")
+
+        # Demonstrate explicit Librarian.objects.get(library=...)
+        try:
+            lib_by_lookup = get_librarian_by_lookup(library_id=library_id)
+            print(f"\n(Lookup) Librarian for Library (id={library_id}): {lib_by_lookup.name}")
+        except Exception as e:
+            print(f"\n(Lookup) Could not find librarian via Librarian.objects.get: {e}")
 
     except Exception as e:
         print(f"Error running sample queries: {e}")

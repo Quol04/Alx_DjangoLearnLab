@@ -7,6 +7,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import user_passes_test, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Group
 from django.forms import ModelForm
 
@@ -130,8 +131,13 @@ class BookForm(ModelForm):
         model = Book
         fields = '__all__'
 
+# Backwards-compatible/custom permission codes referenced elsewhere in the course
+CAN_ADD_BOOK = 'relationship_app.can_add_book'
+CAN_CHANGE_BOOK = 'relationship_app.can_change_book'
+CAN_DELETE_BOOK = 'relationship_app.can_delete_book'
 
-@permission_required('relationship_app.add_book', login_url='login')
+
+@permission_required(CAN_ADD_BOOK, login_url='login')
 def add_book(request):
     """Create a new Book. Requires `relationship_app.add_book` permission."""
     if request.method == 'POST':
@@ -145,7 +151,7 @@ def add_book(request):
     return render(request, 'relationship_app/book_form.html', {'form': form, 'action': 'Add'})
 
 
-@permission_required('relationship_app.change_book', login_url='login')
+@permission_required(CAN_CHANGE_BOOK, login_url='login')
 def edit_book(request, pk):
     """Edit an existing Book. Requires `relationship_app.change_book` permission."""
     book = get_object_or_404(Book, pk=pk)
@@ -160,7 +166,7 @@ def edit_book(request, pk):
     return render(request, 'relationship_app/book_form.html', {'form': form, 'action': 'Edit'})
 
 
-@permission_required('relationship_app.delete_book', login_url='login')
+@permission_required(CAN_DELETE_BOOK, login_url='login')
 def delete_book(request, pk):
     """Delete a Book. Requires `relationship_app.delete_book` permission."""
     book = get_object_or_404(Book, pk=pk)
