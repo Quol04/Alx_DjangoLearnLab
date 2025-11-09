@@ -6,13 +6,9 @@ from django.shortcuts import redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.models import Group
 
-
-# Create your views here.
-# Implement Function-based View:
-
-# Create a function-based view in relationship_app/views.py that lists all books stored in the database.
-# This view should render a simple text list of book titles and their authors.
 
 def list_books(request):
     books = Book.objects.all()
@@ -67,4 +63,54 @@ class AppLogoutView(LogoutView):
 # Note: Role-based views (admin_view, librarian_view, member_view) are
 # implemented in their respective files as per the project structure.
 
-    
+
+# --- Role checks and role-protected views ---
+def is_admin(user):
+    """Return True for site staff or superusers."""
+    return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
+
+
+def is_librarian(user):
+    """Return True if the user is a librarian.
+
+    This checks for a group named 'Librarian' or an attribute `is_librarian` on the user.
+    Adjust to your project's auth model (custom user fields or groups) as needed.
+    """
+    if not (user and user.is_authenticated):
+        return False
+    if user.is_superuser:
+        return True
+    if getattr(user, 'is_librarian', False):
+        return True
+    return user.groups.filter(name='Librarian').exists()
+
+
+def is_member(user):
+    """Return True if the user is a library member.
+
+    Checks group 'Member' or attribute `is_member` on the user.
+    """
+    if not (user and user.is_authenticated):
+        return False
+    if getattr(user, 'is_member', False):
+        return True
+    return user.groups.filter(name='Member').exists()
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_view(request):
+    """View accessible only to admins/staff."""
+    return render(request, 'relationship_app/admin_view.html')
+
+
+@user_passes_test(is_librarian, login_url='login')
+def librarian_view(request):
+    """View accessible only to librarians."""
+    return render(request, 'relationship_app/librarian_view.html')
+
+
+@user_passes_test(is_member, login_url='login')
+def member_view(request):
+    """View accessible only to library members."""
+    return render(request, 'relationship_app/member_view.html')
+
