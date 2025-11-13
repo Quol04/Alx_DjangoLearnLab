@@ -1,0 +1,178 @@
+from django.shortcuts import render
+from .models import Book
+from django.views.generic.detail import DetailView
+from .models import Library
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.decorators import user_passes_test, permission_required
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.models import Group
+from django.forms import ModelForm
+
+# Step 2: Update Views to Enforce Permissions
+# Adjust your views to check if a user has the necessary permissions before allowing them to perform create, update, or delete operations.
+
+# Views to Modify:
+# Use Django’s permission_required decorator to secure views that add, edit, or delete books.
+# For each view, apply the corresponding permission.
+
+
+def list_books(request):
+    books = Book.objects.all()
+    return render(request, 'relationship_app/list_books.html', {'books': books})
+
+
+
+
+class LibraryDetailView(DetailView):
+    model = Library
+    template_name = 'relationship_app/library_detail.html'
+    context_object_name = 'library'
+
+
+# Authentication views
+def register(request):
+    """Register a new user using Django's built-in UserCreationForm.
+
+    On successful registration the new user is automatically logged in
+    and redirected to the site root ('/'). Adjust the redirect target
+    as needed for your project (for example, to a dashboard or home page).
+    """
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Log the user in after successful registration
+            login(request, user)
+            return redirect('/')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'relationship_app/register.html', {'form': form})
+
+
+class AppLoginView(LoginView):
+    """Wrapper around Django's built-in LoginView.
+
+    Provide `template_name` pointing to `relationship_app/login.html`.
+    You can set `next` or `redirect_authenticated_user` in URLs as needed.
+    """
+    template_name = 'relationship_app/login.html'
+
+
+class AppLogoutView(LogoutView):
+    """Wrapper around Django's built-in LogoutView.
+
+    After logout this view will display `relationship_app/logged_out.html`.
+    """
+    template_name = 'relationship_app/logged_out.html'
+
+# Note: Role-based views (admin_view, librarian_view, member_view) are
+# implemented in their respective files as per the project structure.
+
+
+# --- Role checks and role-protected views ---
+def is_admin(user):
+    """Return True for site staff or superusers."""
+    return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
+
+
+def is_librarian(user):
+    """Return True if the user is a librarian.
+
+    This checks for a group named 'Librarian' or an attribute `is_librarian` on the user.
+    Adjust to your project's auth model (custom user fields or groups) as needed.
+    """
+    if not (user and user.is_authenticated):
+        return False
+    if user.is_superuser:
+        return True
+    if getattr(user, 'is_librarian', False):
+        return True
+    return user.groups.filter(name='Librarian').exists()
+
+
+def is_member(user):
+    """Return True if the user is a library member.
+
+    Checks group 'Member' or attribute `is_member` on the user.
+    """
+    if not (user and user.is_authenticated):
+        return False
+    if getattr(user, 'is_member', False):
+        return True
+    return user.groups.filter(name='Member').exists()
+
+
+
+@user_passes_test(is_admin, login_url='login')
+def admin_view(request):
+    """View accessible only to admins/staff."""
+    return render(request, 'relationship_app/admin_view.html')
+
+
+@user_passes_test(is_librarian, login_url='login')
+def librarian_view(request):
+    """View accessible only to librarians."""
+    return render(request, 'relationship_app/librarian_view.html')
+
+
+@user_passes_test(is_member, login_url='login')
+def member_view(request):
+    """View accessible only to library members."""
+    return render(request, 'relationship_app/member_view.html')
+
+
+# --- Permission-protected Book CRUD views ---
+class BookForm(ModelForm):
+    class Meta:
+        model = Book
+        fields = '__all__'
+
+# Backwards-compatible/custom permission codes referenced elsewhere in the course
+CAN_ADD_BOOK = 'relationship_app.can_add_book'
+CAN_CHANGE_BOOK = 'relationship_app.can_change_book'
+CAN_DELETE_BOOK = 'relationship_app.can_delete_book'
+
+
+@permission_required(CAN_ADD_BOOK, login_url='login')
+def add_book(request):
+    """Create a new Book. Requires `relationship_app.add_book` permission."""
+    if request.method == 'POST':
+        form = BookForm(request.POST)
+        if form.is_valid():
+            book = form.save()
+            return redirect('list_books')
+    else:
+        form = BookForm()
+
+    return render(request, 'relationship_app/book_form.html', {'form': form, 'action': 'Add'})
+
+
+@permission_required(CAN_CHANGE_BOOK, login_url='login')
+def edit_book(request, pk):
+    """Edit an existing Book. Requires `relationship_app.change_book` permission."""
+    book = get_object_or_404(Book, pk=pk)
+    if request.method == 'POST':
+        form = BookForm(request.POST, instance=book)
+        if form.is_valid():
+            form.save()
+            return redirect('list_books')
+    else:
+        form = BookForm(instance=book)
+
+    return render(request, 'relationship_app/book_form.html', {'form': form, 'action': 'Edit'})
+
+
+@permission_required(CAN_DELETE_BOOK, login_url='login')
+def delete_book(request, pk):
+    """Delete a Book. Requires `relationship_app.delete_book` permission."""
+    book = get_object_or_404(Book, pk=pk)
+    if request.method == 'POST':
+        book.delete()
+        return redirect('list_books')
+
+    return render(request, 'relationship_app/book_confirm_delete.html', {'book': book})
+
