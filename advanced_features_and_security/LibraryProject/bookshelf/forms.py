@@ -2,7 +2,7 @@
 
 from django import forms
 
-class BookSearchForm(forms.Form):
+class ExampleForm(forms.Form):
     q = forms.CharField(
         required=False,
         max_length=200,

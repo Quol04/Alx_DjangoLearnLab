@@ -42,6 +42,9 @@ SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))  # e.g. 31
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
+# Trust the X-Forwarded-Proto header sent by the reverse proxy (e.g., Nginx)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # -------------------------
 # Browser-side protections
 # -------------------------

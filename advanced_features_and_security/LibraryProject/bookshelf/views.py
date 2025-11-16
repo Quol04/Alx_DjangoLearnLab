@@ -15,7 +15,7 @@ from .models import Book
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from .models import Book
-from .forms import BookSearchForm
+from .forms import ExampleForm
 
 @permission_required('bookshelf.can_view', raise_exception=True)
 def book_list(request):
@@ -25,7 +25,7 @@ def book_list(request):
 
     The view returns context['books'] (checker expects this variable).
     """
-    form = BookSearchForm(request.GET or None)
+    form = ExampleForm(request.GET or None)
     books = Book.objects.all()
 
     if form.is_valid():
