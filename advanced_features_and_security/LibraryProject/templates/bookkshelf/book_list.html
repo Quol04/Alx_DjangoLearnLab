@@ -1,0 +1,27 @@
+{# bookshelf/templates/bookshelf/book_list.html #}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Books</title>
+  {# Content Security Policy is sent from middleware. Avoid inline scripts when possible. #}
+</head>
+<body>
+  <h1>Books</h1>
+
+  <form method="get" action=".">
+    {# search form uses GET; no CSRF token required for GET by default, but including {% csrf_token %} is harmless #}
+    {% csrf_token %}
+    {{ form.q }}
+    <button type="submit">Search</button>
+  </form>
+
+  <ul>
+    {% for book in books %}
+      <li>{{ book.title }} {% if book.author %} — {{ book.author }}{% endif %}</li>
+    {% empty %}
+      <li>No books found.</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

@@ -10,10 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# In production set DJANGO_DEBUG_ENV to "False"
+DEBUG = os.environ.get("DJANGO_DEBUG_ENV", "True").lower() in ("true", "1")
 
 
 # Quick-start development settings - unsuitable for production
@@ -22,11 +27,37 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-^*m$oqwjh*d07k@+#c#afkc2bt)tb^m@u$8(1w3(u5cr6vet$x'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+# -------------------------
+# SECURITY: Host & HTTPS
+# -------------------------
+# Only allow hosts you expect in production:
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
+# Redirect HTTP -> HTTPS in production
+SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "False") == "True"
+
+# Use HSTS (only after you confirm https works)
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))  # e.g. 31536000 in production
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# -------------------------
+# Browser-side protections
+# -------------------------
+SECURE_BROWSER_XSS_FILTER = True            # sets X-XSS-Protection: 1; mode=block
+SECURE_CONTENT_TYPE_NOSNIFF = True         # sets X-Content-Type-Options: nosniff
+X_FRAME_OPTIONS = "DENY"                   # prevents clickjacking
+
+# -------------------------
+# Cookies
+# -------------------------
+SESSION_COOKIE_SECURE = True   # only send session cookie over HTTPS
+CSRF_COOKIE_SECURE = True     # only send CSRF cookie over HTTPS
+
+# Optionally restrict cookies to same-site contexts
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
 # Application definition
 
@@ -39,10 +70,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bookshelf',
     'relationship_app',
+    "csp",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "csp.middleware.CSPMiddleware",   # CSP middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -129,3 +162,14 @@ AUTH_USER_MODEL = 'bookshelf.CustomUser'
 # media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+
+# Example CSP: restrict everything to same-origin by default, allow scripts/styles from self
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'",)   # Add CDNs only if needed, e.g. "https://cdnjs.cloudflare.com"
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # avoid 'unsafe-inline' if you can; included here for legacy CSS
+CSP_IMG_SRC = ("'self'", "data:")  # allow inlined images (data:)
+CSP_FONT_SRC = ("'self'",)
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)  # disallow embedding in frames

@@ -135,4 +135,40 @@ If you add apps to the project, they will live alongside these files (e.g., `boo
 
 
 
+<!-- =============== -->
+# Django Permissions & Groups Setup
 
+## Custom Permissions
+The `bookshelf` model defines the following permissions:
+
+- `can_view`
+- `can_create`
+- `can_edit`
+- `can_delete`
+
+These are used to control access to bookshelf views.
+
+## Groups
+Three groups are created:
+
+### Viewers
+- can_view
+
+### Editors
+- can_view
+- can_create
+- can_edit
+
+### Admins
+- can_view
+- can_create
+- can_edit
+- can_delete
+
+## Enforcing Permissions in Views
+Views use Django's `permission_required` decorator, for example:
+
+```python
+@permission_required('bookshelf.can_edit', raise_exception=True)
+def article_edit(request, pk):
+    ...
