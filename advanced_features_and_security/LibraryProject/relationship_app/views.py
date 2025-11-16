@@ -11,14 +11,7 @@ from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import Group
 from django.forms import ModelForm
 
-# Step 2: Update Views to Enforce Permissions
-# Adjust your views to check if a user has the necessary permissions before allowing them to perform create, update, or delete operations.
-
-# Views to Modify:
-# Use Django’s permission_required decorator to secure views that add, edit, or delete books.
-# For each view, apply the corresponding permission.
-
-
+# Simple view to list all books
 def list_books(request):
     books = Book.objects.all()
     return render(request, 'relationship_app/list_books.html', {'books': books})
