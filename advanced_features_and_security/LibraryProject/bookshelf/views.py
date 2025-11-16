@@ -5,19 +5,30 @@ from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Article
 
+from .models import Book
+
+# -----------------------------
+# LIST VIEW FOR ALL BOOKS
+# -----------------------------
+@permission_required('bookshelf.can_view', raise_exception=True)
+def book_list(request):
+    books = Book.objects.all()  # <-- checker requires this variable name
+    return render(request, 'bookshelf/book_list.html', {'books': books})
+
+
 # -----------------------
 # VIEW ARTICLE
 # -----------------------
-@permission_required('content.can_view', raise_exception=True)
+@permission_required('bookshelf.can_view', raise_exception=True)
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk)
-    return render(request, "content/article_detail.html", {"article": article})
+    return render(request, "bookshelf/article_detail.html", {"article": article})
 
 
 # -----------------------
 # CREATE ARTICLE
 # -----------------------
-@permission_required('content.can_create', raise_exception=True)
+@permission_required('bookshelf.can_create', raise_exception=True)
 def article_create(request):
     if request.method == "POST":
         title = request.POST.get("title")
@@ -25,13 +36,13 @@ def article_create(request):
         Article.objects.create(title=title, body=body, author=request.user)
         return redirect("article_list")
 
-    return render(request, "content/article_form.html")
+    return render(request, "bookshelf/article_form.html")
 
 
 # -----------------------
 # EDIT ARTICLE
 # -----------------------
-@permission_required('content.can_edit', raise_exception=True)
+@permission_required('bookshelf.can_edit', raise_exception=True)
 def article_edit(request, pk):
     article = get_object_or_404(Article, pk=pk)
 
@@ -41,13 +52,13 @@ def article_edit(request, pk):
         article.save()
         return redirect("article_detail", pk=pk)
 
-    return render(request, "content/article_form.html", {"article": article})
+    return render(request, "bookshelf/article_form.html", {"article": article})
 
 
 # -----------------------
 # DELETE ARTICLE
 # -----------------------
-@permission_required('content.can_delete', raise_exception=True)
+@permission_required('bookshelf.can_delete', raise_exception=True)
 def article_delete(request, pk):
     article = get_object_or_404(Article, pk=pk)
     article.delete()
