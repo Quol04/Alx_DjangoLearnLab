@@ -16,12 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from blog.views import PostListView
+from blog.views import PostListView, BlogLoginView, BlogLogoutView, register, profile
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     # project-level named home (used by templates expecting 'home')
-    # path('', PostListView.as_view(), name='home'),
+    path('', PostListView.as_view(), name='home'),
+    # Project-level convenience names expected by templates (non-namespaced)
+    path('posts/', PostListView.as_view(), name='posts'),
+    path('login/', BlogLoginView.as_view(), name='login'),
+    path('logout/', BlogLogoutView.as_view(), name='logout'),
+    path('register/', register, name='register'),
+    path('profile/', profile, name='profile'),
     # app urls (kept as namespace)
     path('', include('blog.urls', namespace='blog')),
 ]
