@@ -31,3 +31,12 @@ class PostForm(forms.ModelForm):
             "title": forms.TextInput(attrs={"placeholder": "Post title"}),
             "content": forms.Textarea(attrs={"rows": 10, "placeholder": "Write your post..."}),
         }
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = __import__('blog.models', fromlist=['Comment']).Comment
+        fields = ("content",)
+        widgets = {
+            "content": forms.Textarea(attrs={"rows": 4, "placeholder": "Write your comment..."}),
+        }
