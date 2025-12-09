@@ -1,0 +1,128 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Dashboard - Social Media API{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .user-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .user-info h3 {
+        color: #667eea;
+        margin-bottom: 10px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #555;
+    }
+    
+    .info-value {
+        color: #333;
+    }
+    
+    .btn-logout {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="dashboard-header">
+    <h2>👋 Welcome!</h2>
+    <p style="color: #666;">You're successfully logged in</p>
+</div>
+
+<div class="user-info" id="userInfo">
+    <h3>Your Profile</h3>
+    <div id="profileData">Loading...</div>
+</div>
+
+<button onclick="viewProfile()" class="btn">View Full Profile</button>
+<button onclick="logout()" class="btn btn-logout">Logout</button>
+
+<script>
+const token = localStorage.getItem('authToken');
+
+if (!token) {
+    window.location.href = '/auth/login/';
+}
+
+async function loadProfile() {
+    try {
+        const response = await fetch('/api/auth/profile/', {
+            headers: {
+                'Authorization': `Token ${token}`,
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('profileData').innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Username:</span>
+                    <span class="info-value">${data.username}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">${data.email}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Bio:</span>
+                    <span class="info-value">${data.bio || 'No bio set'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Followers:</span>
+                    <span class="info-value">${data.followers?.length || 0}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Following:</span>
+                    <span class="info-value">${data.following?.length || 0}</span>
+                </div>
+            `;
+        } else {
+            document.getElementById('profileData').innerHTML = '<p style="color: #721c24;">Failed to load profile</p>';
+        }
+    } catch (error) {
+        document.getElementById('profileData').innerHTML = '<p style="color: #721c24;">Error loading profile</p>';
+    }
+}
+
+function viewProfile() {
+    alert('Profile editing feature - coming soon!');
+}
+
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    window.location.href = '/auth/login/';
+}
+
+// Load profile on page load
+loadProfile();
+</script>
+{% endblock %}

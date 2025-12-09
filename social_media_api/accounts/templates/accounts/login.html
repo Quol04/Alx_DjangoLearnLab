@@ -1,0 +1,93 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Login - Social Media API{% endblock %}
+
+{% block content %}
+<h2>Welcome Back</h2>
+
+<div id="message"></div>
+
+<form id="loginForm">
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    
+    <button type="submit" class="btn">Sign In</button>
+</form>
+
+<div class="link-text">
+    Don't have an account? <a href="{% url 'register_page' %}">Create Account</a>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const messageDiv = document.getElementById('message');
+    const submitBtn = e.target.querySelector('.btn');
+    
+    // Disable button during submission
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing In...';
+    
+    const formData = {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+    };
+    
+    try {
+        const response = await fetch('/api/auth/login/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            messageDiv.innerHTML = '<div class="alert alert-success">✓ Login successful! Redirecting...</div>';
+            
+            // Store token
+            if (data.token) {
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userId', data.user_id);
+                localStorage.setItem('username', data.username);
+            }
+            
+            setTimeout(() => {
+                window.location.href = '/auth/dashboard/';
+            }, 1500);
+        } else {
+            let errorMessage = '<div class="alert alert-error"><strong>Login failed:</strong><ul class="error-list">';
+            for (let field in data) {
+                if (Array.isArray(data[field])) {
+                    data[field].forEach(error => {
+                        errorMessage += `<li>• ${error}</li>`;
+                    });
+                } else {
+                    errorMessage += `<li>• ${data[field]}</li>`;
+                }
+            }
+            errorMessage += '</ul></div>';
+            messageDiv.innerHTML = errorMessage;
+            
+            // Re-enable button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Sign In';
+        }
+    } catch (error) {
+        messageDiv.innerHTML = '<div class="alert alert-error">⚠ Network error. Please try again.</div>';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+    }
+});
+</script>
+{% endblock %}
