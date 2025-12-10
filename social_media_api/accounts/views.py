@@ -1,56 +1,70 @@
-from django.shortcuts import render
-from rest_framework import status 
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
-from .serializers import UserLoginSerializer, UserProfileSerializer, UserRegistrationSerializer
+
 from .models import User
+from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 
-# Create your views here.
 
-# Template views
-def register_page(request):
-    return render(request, 'accounts/register.html')
+class RegisterAPIView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
 
-def login_page(request):
-    return render(request, 'accounts/login.html')
 
-def dashboard_page(request):
-    return render(request, 'accounts/dashboard.html')
-
-class RegisterView(APIView):
-    permission_classes= [AllowAny]
-
-    def post (self, request):
-        serializer= UserRegistrationSerializer(data= request.data)
-
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({
-                'id': user.id,
-                'username':user.username,
-                'email': user.email,
-                'token': user.token
-            }, status= status.HTTP_201_CREATED)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class LoginView (APIView):
-    permission_classes= [AllowAny]
+        user = serializer.save()
+
+        token, _ = Token.objects.get_or_create(user=user)
+        data = UserSerializer(user, context={'request': request}).data
+
+        return Response({
+            'user': data,
+            'token': token.key,
+        }, status=status.HTTP_201_CREATED)
+
+
+#
+
+class LoginAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
 
     def post(self, request):
-        serializer=UserLoginSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class ProfileView(RetrieveUpdateAPIView):
-    serializer_class= UserProfileSerializer
-    authentication_classes= [TokenAuthentication]
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        token, _ = Token.objects.get_or_create(user=user)
+
+        data = UserSerializer(user, context={'request': request}).data
+
+        return Response({
+            'user': data,
+            'token': token.key,
+        }, status=status.HTTP_200_OK)
+
+
+
+class ProfileAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def get_object(self):
         return self.request.user
+
+
+
+#  view other users by username
+class UserDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+    queryset = User.objects.all()
+    permission_classes = [permissions.AllowAny]
